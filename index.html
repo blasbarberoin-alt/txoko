@@ -19,13 +19,54 @@
   </style>
 </head>
 <body>
-  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#5C1520;color:#C4893A;font-family:Georgia,serif;font-size:22px;font-weight:900;text-align:center;padding:20px">Txoko San Pedro<br/><span style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Arial;font-weight:400;margin-top:8px;display:block">Cargando...</span></div></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyC27u8VdnYDxBQv2vzqjy-XlreaBSWs1y8",
+    authDomain: "txoko-san-pedro.firebaseapp.com",
+    databaseURL: "https://txoko-san-pedro-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "txoko-san-pedro",
+    storageBucket: "txoko-san-pedro.firebasestorage.app",
+    messagingSenderId: "375708021344",
+    appId: "1:375708021344:web:1aa5e6973f275f44b70905"
+  };
+    const fbApp = initializeApp(firebaseConfig);
+    const db = getDatabase(fbApp);
+    const dbRef = ref(db, "txoko");
+
+    // Expose Firebase to React app
+    window.fbDB = db;
+    window.fbRef = ref;
+    window.fbSet = set;
+    window.fbOnValue = onValue;
+    window.fbReady = false;
+    window.fbData = null;
+
+    // Listen for data changes and update app
+    onValue(dbRef, (snapshot) => {
+      const data = snapshot.val();
+      window.fbData = data;
+      window.fbReady = true;
+      if (window.onFbData) window.onFbData(data);
+    });
+
+    // Expose save function
+    window.fbSave = (data) => {
+      set(dbRef, data).catch(e => console.error("Firebase save error:", e));
+    };
+
+    console.log("Firebase connected");
+  </script>
+  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#5C1520;color:#C4893A;font-family:Georgia,serif;font-size:22px;font-weight:900;text-align:center;padding:20px">Txoko San Pedro<br/><span style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Arial;font-weight:400;margin-top:8px;display:block">Conectando...</span></div></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <script>window.onerror=function(m,s,l){document.getElementById("root").innerHTML='<div style="padding:30px;color:#7A1E2E;font-family:Arial;text-align:center"><h2>Error al cargar</h2><p style="margin-top:12px;color:#666;font-size:13px">'+m+'</p><p style="color:#999;font-size:11px">Linea '+l+'</p></div>';}</script>
+  <script>window.onerror=function(m,s,l){console.error(m,l);}</script>
   <script type="text/babel">
-const { useState, useMemo, useCallback } = React;
+const { useState, useMemo, useCallback, useEffect } = React;
 
 
 // -- CONSTANTES ----------------------------------------------------------------
@@ -175,9 +216,9 @@ function TabBarH({tabs,active,onChange}){
   );
 }
 
-// ==============================================================================
+// ------------------------------------------------------------------------------
 // PANTALLAS
-// ==============================================================================
+// ------------------------------------------------------------------------------
 
 // -- LOGIN ---------------------------------------------------------------------
 function Login({onAcceso}){
@@ -258,7 +299,7 @@ function Dashboard({cenas,socios,cuotas,teso,facturas,setPag,setSelCena}){
     <div style={{paddingBottom:16}}>
       {/* Hero */}
       <div style={{background:`linear-gradient(150deg,${C.wineD} 0%,${C.wine} 70%)`,padding:"20px 16px 20px",position:"relative",overflow:"hidden"}}>
-        {/* Decoracion */}
+        {/* Decoraci-n */}
         <div style={{position:"absolute",top:-40,right:-40,width:140,height:140,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
         <div style={{position:"absolute",bottom:-20,right:20,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
         <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Dinero disponible</div>
@@ -299,7 +340,7 @@ function Dashboard({cenas,socios,cuotas,teso,facturas,setPag,setSelCena}){
             {alertas.map((a,i)=>(
               <div key={i} onClick={()=>setPag(a.pag)} style={{background:a.color+"12",borderLeft:`3px solid ${a.color}`,borderRadius:8,padding:"10px 12px",marginBottom:6,fontSize:12,color:a.color,fontWeight:600,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span>{a.txt}</span>
-                <span style={{opacity:0.6}}>&gt;</span>
+                <span style={{opacity:0.6}}>></span>
               </div>
             ))}
           </div>
@@ -565,7 +606,7 @@ function CenaDetalle({cenaId,cenas,setCenas,socios,teso,setTeso,setPag,readonly}
       {/* Header */}
       <div style={{background:C.wineD,padding:"12px 14px 0",flexShrink:0}}>
         <button onClick={()=>setPag("cena_lista")} style={{background:"none",border:"none",color:"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:12,padding:"0 0 8px",fontFamily:"inherit"}}>
-          &lt;- Volver
+          <- Volver
         </button>
         <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:2}}>{cena.nombre}</div>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,fontSize:11,color:"rgba(255,255,255,0.5)"}}>
@@ -652,7 +693,7 @@ function CenaDetalle({cenaId,cenas,setCenas,socios,teso,setTeso,setPag,readonly}
                           </div>
                         );
                       })}
-                      {/* Anadir invitado */}
+                      {/* A-adir invitado */}
                       {!cena.cerrada&&(
                         <div style={{display:"flex",gap:6}}>
                           <input style={{...Ip,flex:1,padding:"6px 10px",fontSize:12}} placeholder="Nombre invitado..." value={invText[a.socioId]||""} onChange={e=>setInvText(p=>({...p,[a.socioId]:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter"){addInv(a.socioId,(invText[a.socioId]||"").trim());setInvText(p=>({...p,[a.socioId]:""}));}}}/>
@@ -754,7 +795,7 @@ function CenaDetalle({cenaId,cenas,setCenas,socios,teso,setTeso,setPag,readonly}
                     </div>
                   )}
 
-                  {/* 3 filas devolucion */}
+                  {/* 3 filas devoluci-n */}
                   {adImporte>0&&(
                     <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${meta.color}40`,marginBottom:10}}>
                       {/* Cabecera */}
@@ -854,7 +895,7 @@ function CenaDetalle({cenaId,cenas,setCenas,socios,teso,setTeso,setPag,readonly}
         )}
       </div>
 
-      {/* Boton cerrar - footer fijo */}
+      {/* Bot-n cerrar - footer fijo */}
       {!cena.cerrada&&(
         <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"10px 12px",background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
           {!readonly&&<button onClick={cerrar} style={{...Btn(C.wine),width:"100%",padding:"14px",fontSize:14,borderRadius:12,boxShadow:`0 4px 12px ${C.wine}50`}}>Cerrar y archivar cena</button>}
@@ -1107,7 +1148,7 @@ function BarChart({data, height=120, colorFn}){
   const W=100/data.length;
   return(
     <div style={{position:"relative",height,display:"flex",alignItems:"flex-end",gap:2,padding:"0 4px"}}>
-      {/* Lineas guia */}
+      {/* L-neas gu-a */}
       {[0,0.5,1].map(p=>(
         <div key={p} style={{position:"absolute",left:0,right:0,bottom:`${p*100}%`,borderTop:`1px dashed ${C.border}`,pointerEvents:"none"}}/>
       ))}
@@ -1467,7 +1508,7 @@ function Informes({cenas,cuotas,socios,teso,facturas,readonly}){
         <div style={{fontWeight:700,fontSize:11,color:C.textS,textTransform:"uppercase",marginBottom:8,paddingLeft:4}}>Informes de cena</div>
         <button onClick={()=>setVista("cena")} style={{...Cd,width:"100%",textAlign:"left",cursor:"pointer",border:`1px solid ${C.border}`,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><div style={{fontWeight:800,fontSize:14,color:C.wine}}>Resumen de cena</div><div style={{fontSize:12,color:C.textS,marginTop:2}}>Asistencia, gastos y resultado de la cena seleccionada</div></div>
-          <span style={{fontSize:20,color:C.textS}}>&gt;</span>
+          <span style={{fontSize:20,color:C.textS}}>></span>
         </button>
 
         {/* Informes anuales */}
@@ -1480,7 +1521,7 @@ function Informes({cenas,cuotas,socios,teso,facturas,readonly}){
         ].map(([key,titulo,desc])=>(
           <button key={key} onClick={()=>setVista(key)} style={{...Cd,width:"100%",textAlign:"left",cursor:"pointer",border:`1px solid ${C.border}`,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><div style={{fontWeight:800,fontSize:14,color:C.wine}}>{titulo}</div><div style={{fontSize:12,color:C.textS,marginTop:2}}>{desc}</div></div>
-            <span style={{fontSize:20,color:C.textS}}>&gt;</span>
+            <span style={{fontSize:20,color:C.textS}}>></span>
           </button>
         ))}
 
@@ -1587,9 +1628,9 @@ function Tesoreria({teso,setTeso,cenas,socios,cuotas,facturas,setFacturas,readon
   );
 }
 
-// ==============================================================================
+// ------------------------------------------------------------------------------
 // APP PRINCIPAL - MARCO MOVIL
-// ==============================================================================
+// ------------------------------------------------------------------------------
 // ==============================================================================
 // INVERSIONES - Iniciales, derramas y devoluciones
 // ==============================================================================
@@ -1605,7 +1646,7 @@ function Inversiones({socios, cenas, inversiones, setInversiones, derramas, setD
   // -- CALCULOS -----------------------------------------------------------------
   // Total adelantado por cada socio (inversiones + derramas)
   const totalAdelantado = (socioId) => {
-    // Suma lo que aporto este socio en inversiones iniciales (puede ser parcial)
+    // Suma lo que aport- este socio en inversiones iniciales (puede ser parcial)
     const deInv = inversiones.reduce((s,i)=>{
       const ap = (i.aportantes||[]).find(a=>a.socioId===socioId);
       return s + (ap ? ap.importe : 0);
@@ -2095,16 +2136,27 @@ function App(){
   // -- HOOKS (todos antes del return condicional) --
   const [acceso,setAcceso] = useState(false);
   const [rol,setRol]       = useState("");
+
+  // Auto-save to Firebase whenever data changes
+  useEffect(()=>{
+    if(!acceso || rol!=="admin") return; // Only save when admin is logged in
+    if(typeof window.fbSave !== "function") return;
+    const timer = setTimeout(()=>{
+      window.fbSave({cenas, cuotas, teso, facturas, socios, inversiones, derramas, devoluciones});
+    }, 1500); // Debounce 1.5s
+    return ()=>clearTimeout(timer);
+  },[cenas, cuotas, teso, facturas, socios, inversiones, derramas, devoluciones, acceso]);
   const [pag,setPag]       = useState("dashboard");
-  const [socios,setSocios]           = useState(SOCIOS_INIT);
-  const [inversiones,setInversiones]  = useState(INVERSIONES_INIT);
-  const [derramas,setDerramas]        = useState(DERRAMAS_INIT);
-  const [devoluciones,setDevoluciones]= useState(DEVOLUCIONES_INIT);
+  const [socios,setSocios]           = useState(fd.socios       || SOCIOS_INIT);
+  const [inversiones,setInversiones]  = useState(fd.inversiones  || INVERSIONES_INIT);
+  const [derramas,setDerramas]        = useState(fd.derramas     || DERRAMAS_INIT);
+  const [devoluciones,setDevoluciones]= useState(fd.devoluciones || DEVOLUCIONES_INIT);
   const [selCena,setSelCena] = useState(null);
-  const [cenas,setCenas]   = useState(CENAS_INIT);
-  const [cuotas,setCuotas] = useState(CUOTAS_INIT);
-  const [teso,setTeso]     = useState({caja:450,banco:2800,bizum:320});
-  const [facturas,setFacturas] = useState([
+  const fd = firebaseInitData || {};
+  const [cenas,setCenas]           = useState(fd.cenas      || CENAS_INIT);
+  const [cuotas,setCuotas]         = useState(fd.cuotas     || CUOTAS_INIT);
+  const [teso,setTeso]             = useState(fd.teso       || {caja:450,banco:2800,bizum:320});
+  const [facturas,setFacturas]     = useState(fd.facturas   || [
     {id:1,concepto:"Cocinero junio",  importe:300,cat:"Cocinero",venc:"2025-06-14",pagado:false},
     {id:2,concepto:"Limpieza junio",  importe:50, cat:"Limpieza",venc:"2025-06-14",pagado:false},
     {id:3,concepto:"Alquiler junio",  importe:110,cat:"Alquiler",venc:"2025-06-01",pagado:true},
@@ -2217,7 +2269,40 @@ function App(){
 }
 
 
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+// Firebase sync wrapper around App
+function AppWithFirebase() {
+  const [fbLoaded, setFbLoaded] = useState(false);
+  const [fbInitData, setFbInitData] = useState(null);
+
+  useEffect(() => {
+    const check = () => {
+      if (window.fbReady) {
+        setFbInitData(window.fbData);
+        setFbLoaded(true);
+      } else {
+        setTimeout(check, 200);
+      }
+    };
+    check();
+    window.onFbData = (data) => {
+      // Only update if not yet loaded (first load)
+      // After that, local state drives and saves to FB
+    };
+  }, []);
+
+  if (!fbLoaded) {
+    return (
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#5C1520",color:"#C4893A",fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:"900",textAlign:"center",padding:"20px",flexDirection:"column"}}>
+        <div>Txoko San Pedro</div>
+        <div style={{fontSize:"13px",color:"rgba(255,255,255,0.5)",fontFamily:"Arial",fontWeight:"400",marginTop:"8px"}}>Conectando a la nube...</div>
+      </div>
+    );
+  }
+
+  return <App firebaseInitData={fbInitData} />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AppWithFirebase));
   </script>
 </body>
 </html>
