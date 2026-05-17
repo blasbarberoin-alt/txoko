@@ -19,54 +19,12 @@
   </style>
 </head>
 <body>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-    const firebaseConfig = {
-    apiKey: "AIzaSyC27u8VdnYDxBQv2vzqjy-XlreaBSWs1y8",
-    authDomain: "txoko-san-pedro.firebaseapp.com",
-    databaseURL: "https://txoko-san-pedro-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "txoko-san-pedro",
-    storageBucket: "txoko-san-pedro.firebasestorage.app",
-    messagingSenderId: "375708021344",
-    appId: "1:375708021344:web:1aa5e6973f275f44b70905"
-  };
-    const fbApp = initializeApp(firebaseConfig);
-    const db = getDatabase(fbApp);
-    const dbRef = ref(db, "txoko");
-
-    // Expose Firebase to React app
-    window.fbDB = db;
-    window.fbRef = ref;
-    window.fbSet = set;
-    window.fbOnValue = onValue;
-    window.fbReady = false;
-    window.fbData = null;
-
-    // Listen for data changes and update app
-    onValue(dbRef, (snapshot) => {
-      const data = snapshot.val();
-      window.fbData = data;
-      window.fbReady = true;
-      if (window.onFbData) window.onFbData(data);
-    });
-
-    // Expose save function
-    window.fbSave = (data) => {
-      set(dbRef, data).catch(e => console.error("Firebase save error:", e));
-    };
-
-    console.log("Firebase connected");
-  </script>
-  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#5C1520;color:#C4893A;font-family:Georgia,serif;font-size:22px;font-weight:900;text-align:center;padding:20px">Txoko San Pedro<br/><span style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Arial;font-weight:400;margin-top:8px;display:block">Conectando...</span></div></div>
+  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#5C1520;color:#C4893A;font-family:Georgia,serif;font-size:22px;font-weight:900;text-align:center;padding:20px">Txoko San Pedro<br/><span style="font-size:13px;color:rgba(255,255,255,0.5);font-family:Arial;font-weight:400;margin-top:8px;display:block">Cargando...</span></div></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <script>window.onerror=function(m,s,l){console.error(m,l);}</script>
   <script type="text/babel">
-const { useState, useMemo, useCallback, useEffect } = React;
+const { useState, useMemo, useCallback } = React;
 
 
 // -- CONSTANTES ----------------------------------------------------------------
@@ -606,7 +564,7 @@ function CenaDetalle({cenaId,cenas,setCenas,socios,teso,setTeso,setPag,readonly}
       {/* Header */}
       <div style={{background:C.wineD,padding:"12px 14px 0",flexShrink:0}}>
         <button onClick={()=>setPag("cena_lista")} style={{background:"none",border:"none",color:"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:12,padding:"0 0 8px",fontFamily:"inherit"}}>
-          &lt;- Volver
+          {"<- Volver"}
         </button>
         <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:900,color:"#fff",marginBottom:2}}>{cena.nombre}</div>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,fontSize:11,color:"rgba(255,255,255,0.5)"}}>
@@ -2137,26 +2095,44 @@ function App(){
   const [acceso,setAcceso] = useState(false);
   const [rol,setRol]       = useState("");
 
-  // Auto-save to Firebase whenever data changes
-  useEffect(()=>{
-    if(!acceso || rol!=="admin") return; // Only save when admin is logged in
-    if(typeof window.fbSave !== "function") return;
-    const timer = setTimeout(()=>{
-      window.fbSave({cenas, cuotas, teso, facturas, socios, inversiones, derramas, devoluciones});
-    }, 1500); // Debounce 1.5s
-    return ()=>clearTimeout(timer);
-  },[cenas, cuotas, teso, facturas, socios, inversiones, derramas, devoluciones, acceso]);
+  // localStorage: cargar datos al inicio
+  React.useEffect(()=>{
+    try{
+      const saved = localStorage.getItem("txoko_v1");
+      if(saved){
+        const d = JSON.parse(saved);
+        if(d.cenas && d.cenas.length) setCenas(d.cenas);
+        if(d.cuotas && d.cuotas.length) setCuotas(d.cuotas);
+        if(d.teso) setTeso(d.teso);
+        if(d.facturas) setFacturas(d.facturas);
+        if(d.socios && d.socios.length) setSocios(d.socios);
+        if(d.inversiones) setInversiones(d.inversiones);
+        if(d.derramas) setDerramas(d.derramas);
+        if(d.devoluciones) setDevoluciones(d.devoluciones);
+      }
+    }catch(e){console.log("No saved data");}
+  },[]);
+
+  // localStorage: guardar cuando cambia algo (solo admin)
+  React.useEffect(()=>{
+    if(!acceso || rol!=="admin") return;
+    try{
+      localStorage.setItem("txoko_v1", JSON.stringify(
+        {cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones}
+      ));
+    }catch(e){}
+  },[cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones,acceso,rol]);
+
   const [pag,setPag]       = useState("dashboard");
-  const [socios,setSocios]           = useState(fd.socios       || SOCIOS_INIT);
-  const [inversiones,setInversiones]  = useState(fd.inversiones  || INVERSIONES_INIT);
-  const [derramas,setDerramas]        = useState(fd.derramas     || DERRAMAS_INIT);
-  const [devoluciones,setDevoluciones]= useState(fd.devoluciones || DEVOLUCIONES_INIT);
+  const [socios,setSocios]           = useState(SOCIOS_INIT);
+  const [inversiones,setInversiones]  = useState(INVERSIONES_INIT);
+  const [derramas,setDerramas]        = useState(DERRAMAS_INIT);
+  const [devoluciones,setDevoluciones]= useState(DEVOLUCIONES_INIT);
   const [selCena,setSelCena] = useState(null);
-  const fd = firebaseInitData || {};
-  const [cenas,setCenas]           = useState(fd.cenas      || CENAS_INIT);
-  const [cuotas,setCuotas]         = useState(fd.cuotas     || CUOTAS_INIT);
-  const [teso,setTeso]             = useState(fd.teso       || {caja:450,banco:2800,bizum:320});
-  const [facturas,setFacturas]     = useState(fd.facturas   || [
+  const [cenas,setCenas]   = useState(CENAS_INIT);
+  const [cuotas,setCuotas] = useState(CUOTAS_INIT);
+  const [teso,setTeso]     = useState({caja:450,banco:2800,bizum:320});
+  const [facturas,setFacturas] = useState([
     {id:1,concepto:"Cocinero junio",  importe:300,cat:"Cocinero",venc:"2025-06-14",pagado:false},
     {id:2,concepto:"Limpieza junio",  importe:50, cat:"Limpieza",venc:"2025-06-14",pagado:false},
     {id:3,concepto:"Alquiler junio",  importe:110,cat:"Alquiler",venc:"2025-06-01",pagado:true},
@@ -2269,53 +2245,7 @@ function App(){
 }
 
 
-// Firebase sync wrapper around App
-function AppWithFirebase() {
-  const [fbLoaded, setFbLoaded] = useState(false);
-  const [fbInitData, setFbInitData] = useState(null);
-
-  useEffect(() => {
-    // Timeout de 6 segundos - si Firebase no responde, carga igual
-    const timeout = setTimeout(() => {
-      console.log("Firebase timeout - cargando sin datos de nube");
-      setFbInitData(null);
-      setFbLoaded(true);
-    }, 6000);
-
-    const check = () => {
-      if (window.fbReady) {
-        clearTimeout(timeout);
-        setFbInitData(window.fbData);
-        setFbLoaded(true);
-      } else {
-        setTimeout(check, 300);
-      }
-    };
-    check();
-
-    // Actualizar datos en tiempo real
-    window.onFbData = (data) => {
-      if (!fbLoaded) return;
-      // datos actualizados en tiempo real
-    };
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  if (!fbLoaded) {
-    return (
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#5C1520",color:"#C4893A",fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:"900",textAlign:"center",padding:"20px",flexDirection:"column"}}>
-        <div>Txoko San Pedro</div>
-        <div style={{fontSize:"13px",color:"rgba(255,255,255,0.5)",fontFamily:"Arial",fontWeight:"400",marginTop:"8px"}}>Conectando...</div>
-        <div style={{fontSize:"11px",color:"rgba(255,255,255,0.3)",fontFamily:"Arial",fontWeight:"400",marginTop:"16px"}}>Si tarda, comprueba tu conexion a internet</div>
-      </div>
-    );
-  }
-
-  return <App firebaseInitData={fbInitData} />;
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AppWithFirebase));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
   </script>
 </body>
 </html>
