@@ -2095,48 +2095,17 @@ function App(){
   const [acceso,setAcceso] = useState(false);
   const [rol,setRol]       = useState("");
 
-  // localStorage: cargar datos al inicio
-  React.useEffect(()=>{
-    try{
-      const saved = localStorage.getItem("txoko_v1");
-      if(saved){
-        const d = JSON.parse(saved);
-        if(d.cenas && d.cenas.length) setCenas(d.cenas);
-        if(d.cuotas && d.cuotas.length) setCuotas(d.cuotas);
-        if(d.teso) setTeso(d.teso);
-        if(d.facturas) setFacturas(d.facturas);
-        if(d.socios && d.socios.length) setSocios(d.socios);
-        if(d.inversiones) setInversiones(d.inversiones);
-        if(d.derramas) setDerramas(d.derramas);
-        if(d.devoluciones) setDevoluciones(d.devoluciones);
-      }
-    }catch(e){console.log("No saved data");}
-  },[]);
-
-  // localStorage: guardar cuando cambia algo (solo admin)
-  React.useEffect(()=>{
-    if(!acceso || rol!=="admin") return;
-    try{
-      localStorage.setItem("txoko_v1", JSON.stringify(
-        {cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones}
-      ));
-    }catch(e){}
-  },[cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones,acceso,rol]);
 
   const [pag,setPag]       = useState("dashboard");
-  const [socios,setSocios]           = useState(SOCIOS_INIT);
-  const [inversiones,setInversiones]  = useState(INVERSIONES_INIT);
-  const [derramas,setDerramas]        = useState(DERRAMAS_INIT);
-  const [devoluciones,setDevoluciones]= useState(DEVOLUCIONES_INIT);
+  const [socios,setSocios]           = useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return(d.socios&&d.socios.length)?d.socios:SOCIOS_INIT;}catch(e){return SOCIOS_INIT;}});
+  const [inversiones,setInversiones]  = useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return(d.inversiones&&d.inversiones.length)?d.inversiones:INVERSIONES_INIT;}catch(e){return INVERSIONES_INIT;}});
+  const [derramas,setDerramas]        = useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return(d.derramas&&d.derramas.length)?d.derramas:DERRAMAS_INIT;}catch(e){return DERRAMAS_INIT;}});
+  const [devoluciones,setDevoluciones]= useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return(d.devoluciones&&d.devoluciones.length)?d.devoluciones:DEVOLUCIONES_INIT;}catch(e){return DEVOLUCIONES_INIT;}});
   const [selCena,setSelCena] = useState(null);
-  const [cenas,setCenas]   = useState(CENAS_INIT);
-  const [cuotas,setCuotas] = useState(CUOTAS_INIT);
-  const [teso,setTeso]     = useState({caja:450,banco:2800,bizum:320});
-  const [facturas,setFacturas] = useState([
-    {id:1,concepto:"Cocinero junio",  importe:300,cat:"Cocinero",venc:"2025-06-14",pagado:false},
-    {id:2,concepto:"Limpieza junio",  importe:50, cat:"Limpieza",venc:"2025-06-14",pagado:false},
-    {id:3,concepto:"Alquiler junio",  importe:110,cat:"Alquiler",venc:"2025-06-01",pagado:true},
-  ]);
+  const [cenas,setCenas]   = useState(()=>{ try{const d=JSON.parse(localStorage.getItem("txoko_v1")||"{}");return(d.cenas&&d.cenas.length)?d.cenas:CENAS_INIT;}catch(e){return CENAS_INIT;} });
+  const [cuotas,setCuotas] = useState(()=>{ try{const d=JSON.parse(localStorage.getItem("txoko_v1")||"{}");return(d.cuotas&&d.cuotas.length)?d.cuotas:CUOTAS_INIT;}catch(e){return CUOTAS_INIT;} });
+  const [teso,setTeso]     = useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return d.teso||{caja:450,banco:2800,bizum:320};}catch(e){return{caja:450,banco:2800,bizum:320};}});
+  const [facturas,setFacturas] = useState(()=>{try{const d=JSON.parse(localStorage.getItem('txoko_v1')||'{}');return d.facturas||[{id:1,concepto:'Cocinero junio',importe:300,cat:'Cocinero',venc:'2025-06-14',pagado:false},{id:2,concepto:'Limpieza junio',importe:50,cat:'Limpieza',venc:'2025-06-14',pagado:false},{id:3,concepto:'Alquiler junio',importe:110,cat:'Alquiler',venc:'2025-06-01',pagado:true}];}catch(e){return[];}});
 
   const addCena = useCallback(({nombre,fecha})=>{
     setCenas(p=>[...p,{
@@ -2193,6 +2162,16 @@ function App(){
   // -- LAYOUT LIMPIO ---------------------------------------------------------
   const ro = rol === "socio";
 
+  // Auto-guardar en localStorage (solo admin)
+  React.useEffect(()=>{
+    if(!acceso||ro) return;
+    try{
+      localStorage.setItem("txoko_v1",JSON.stringify(
+        {cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones}
+      ));
+    }catch(e){}
+  },[cenas,cuotas,teso,facturas,socios,inversiones,derramas,devoluciones,acceso]);
+
   return(
     <div style={{
       display:"flex", flexDirection:"column",
@@ -2233,19 +2212,4 @@ function App(){
                 padding:"14px 2px 12px",display:"flex",flexDirection:"column",
                 alignItems:"center",gap:3,fontFamily:"inherit",position:"relative",minHeight:52,
               }}>
-                <span style={{fontSize:12,fontWeight:active?900:600,color:active?"#fff":C.textS,lineHeight:1.3,textAlign:"center"}}>{label}</span>
-                {badge>0&&<span style={{position:"absolute",top:5,right:3,background:C.red,color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:800}}>{badge}</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-  </script>
-</body>
-</html>
+                <span style={{fontSize:12,fontWeight:active?900:600,color:active?"#fff":C.textS,lineHeight:1.3,textA
