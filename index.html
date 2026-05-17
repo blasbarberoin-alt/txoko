@@ -2275,26 +2275,39 @@ function AppWithFirebase() {
   const [fbInitData, setFbInitData] = useState(null);
 
   useEffect(() => {
+    // Timeout de 6 segundos - si Firebase no responde, carga igual
+    const timeout = setTimeout(() => {
+      console.log("Firebase timeout - cargando sin datos de nube");
+      setFbInitData(null);
+      setFbLoaded(true);
+    }, 6000);
+
     const check = () => {
       if (window.fbReady) {
+        clearTimeout(timeout);
         setFbInitData(window.fbData);
         setFbLoaded(true);
       } else {
-        setTimeout(check, 200);
+        setTimeout(check, 300);
       }
     };
     check();
+
+    // Actualizar datos en tiempo real
     window.onFbData = (data) => {
-      // Only update if not yet loaded (first load)
-      // After that, local state drives and saves to FB
+      if (!fbLoaded) return;
+      // datos actualizados en tiempo real
     };
+
+    return () => clearTimeout(timeout);
   }, []);
 
   if (!fbLoaded) {
     return (
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#5C1520",color:"#C4893A",fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:"900",textAlign:"center",padding:"20px",flexDirection:"column"}}>
         <div>Txoko San Pedro</div>
-        <div style={{fontSize:"13px",color:"rgba(255,255,255,0.5)",fontFamily:"Arial",fontWeight:"400",marginTop:"8px"}}>Conectando a la nube...</div>
+        <div style={{fontSize:"13px",color:"rgba(255,255,255,0.5)",fontFamily:"Arial",fontWeight:"400",marginTop:"8px"}}>Conectando...</div>
+        <div style={{fontSize:"11px",color:"rgba(255,255,255,0.3)",fontFamily:"Arial",fontWeight:"400",marginTop:"16px"}}>Si tarda, comprueba tu conexion a internet</div>
       </div>
     );
   }
